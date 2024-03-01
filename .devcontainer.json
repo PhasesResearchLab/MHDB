@@ -1,0 +1,26 @@
+{
+    "image": "mcr.microsoft.com/devcontainers/miniconda",
+    "customizations": {
+      "codespaces": {
+        "openFiles": [
+          "README.md",
+          "/notebooks/run.ipynb"
+        ]
+      },
+      "vscode": {
+        "extensions": [
+          "wijmo.gc-excelviewer",
+          "mechatroner.rainbow-csv",
+          "ms-python.python",
+          "ms-toolsai.jupyter",
+          "hansvn.instant-mongo"
+        ]
+      }
+    },
+    "hostRequirements": {
+       "cpus": 4,
+       "memory": "16gb",
+       "storage": "16gb"
+    },
+    "onCreateCommand": "conda install -y python=3.10 jupyter numpy scipy matplotlib && python -m pip install pymatgen pymongo pycalphad"
+}
