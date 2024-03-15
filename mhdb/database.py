@@ -67,8 +67,7 @@ def tdb2one(file_path:str):
         for i, phase in enumerate(data['phases']):
             if phase_name == phase.split()[1].split(':')[0]:
                 if phase_name:
-                    sublattice_strs = [','.join(set(",".join(sublattice).split(','))) for sublattice in phase_species[phase_name]]
-                    data['phases'][i] = phase + f' CONSTITUENT {phase_name} :{":".join(sublattice_strs)}: !'
+                    data['phases'][i] = phase + f' CONSTITUENT {phase_name} :{":".join([','.join(set(",".join(sublattice).split(','))) for sublattice in phase_species[phase_name]])}: !'
 
     for phase_description in data['phase_descriptions']:
         for j, phase in enumerate(data['phases']):
