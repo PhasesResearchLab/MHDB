@@ -13,7 +13,10 @@
           "ms-python.python",
           "ms-toolsai.jupyter",
           "hansvn.instant-mongo"
-        ]
+        ],
+        "env": {
+          "MONGODB_URI": "mongodb+srv://rdamaral:GBmJrZ8XIsCCcWWQ@plr-cluster.ls9prsp.mongodb.net/"
+        }
       }
     },
     "hostRequirements": {
