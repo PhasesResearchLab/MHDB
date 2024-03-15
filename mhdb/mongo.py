@@ -3,10 +3,17 @@ dns.resolver.default_resolver=dns.resolver.Resolver(configure=False)
 dns.resolver.default_resolver.nameservers=['8.8.8.8']
                                            
 import json
+import re
 from pymongo import MongoClient
 from pymatgen.core import Composition
 
 import datetime
+
+client_string='mongodb+srv://rdamaral:GBmJrZ8XIsCCcWWQ@plr-cluster.ls9prsp.mongodb.net/'
+client = MongoClient(client_string)
+
+db = client['MHDB'] 
+collection = db['curated']
 
 def updateEntry(entry:dict, collection):
     collection = db[collection]
@@ -19,7 +26,7 @@ def updateEntry(entry:dict, collection):
     else:
         entry['metadata']['lastModified'] = datetime.datetime.now()
         collection.update_one({'material.phaseModel': entry['material']['phaseModel'], 'material.phaseLabel': entry['material']['phaseLabel'], 'material.endmembers': entry['material']['endmembers']}, 
-                                      {'$set': {'metadata.lastModified': entry['metadata']['lastModified'], 'material': entry['material'], 'dft': entry['dft'], 'tdb': entry['tdb']}})
+                                      {'$set': {'metadata.lastModified': entry['metadata']['lastModified'], 'material': entry['material'], 'tdb': entry['tdb']}})
         return entry
 
 
