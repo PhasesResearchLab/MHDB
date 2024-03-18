@@ -1,6 +1,8 @@
 from pycalphad.io.database import Database
+from pprint import pprint
 import re, json, os
 
+# Creates a JSON file from a TDB file
 def tdb2one(file_path:str):
     fd = open(file_path if '.tdb' in file_path.lower() else file_path + '.tdb', 'r')
 
@@ -78,12 +80,13 @@ def tdb2one(file_path:str):
 
     return data
 
+# Creates a JSON file with a collection of unitary tdbs from a TDB file
 def one2many(data:list):
     data_collection = []
     cache = []
 
     for k, parameter in enumerate(data['parameters']):
-        phase_species = re.search(r'PARAMETER [A-Z]+\(([^;]+);', parameter).group(1)
+        phase_species = re.search(r'PARAMETER [A-Z]+\(([^;]+);', parameter).group(1).replace(' ','')
         if phase_species in cache:
             continue
         
@@ -100,7 +103,7 @@ def one2many(data:list):
         # Get phase > Update constituents
         for phase in data['phases']:
             if phase_species.split(',')[0] == phase.split()[1].split(':')[0]:
-                data_collection[i]['phases'].append(f"{phase.split('!')[0]}! CONSTITUENT {phase_species.split(',')[0]} :{phase_species.split(',')[1]}: !{phase.split('!')[2] + '!' if phase.split('!')[2] else ''}")
+                data_collection[i]['phases'].append(f"{phase.split('!')[0]}! CONSTITUENT {phase_species.split(',')[0]} :{phase_species.split(',', 1)[1]}: !{phase.split('!')[2] + '!' if phase.split('!')[2] else ''}")
 
         # Get species > Get elements
         phase_elements = []
@@ -118,7 +121,7 @@ def one2many(data:list):
 
         # Get symbols called in parameters
         for phase_parameter in data_collection[i]['parameters']:
-            for phase_symbol in re.findall(r'[-+ ](\w+)(?=#)', phase_parameter):  
+            for phase_symbol in re.findall(r'\b\w{3,}_?\w*\b', phase_parameter):  
                 for symbol in data['symbols']:
                     if phase_symbol == symbol.split()[1]:
                         data_collection[i]['symbols'].append(symbol)
@@ -133,14 +136,18 @@ def one2many(data:list):
                         data_collection[i]['symbols'].append(secondary_symbol)
             j += 1
 
+        # Get references
+        data_collection[i]['references'].append(data['references']) #Improve accordingly to tdb2one
+
     return data_collection
 
-def many2one(elements:list,xtdb_collection:list):
+# Compile system-TDB files from a collection of unitary TDB files
+def many2one(elements:list,data_collection:list):
 
-    xTDB = {key: [] for key in xtdb_collection[0].keys()}
+    xTDB = {key: [] for key in data_collection[0].keys()}
 
     # Collect entries according to the elements
-    for xtdb in xtdb_collection:
+    for xtdb in data_collection:
         elements_xtdb = [line.split()[1] for line in xtdb['elements'] if line.split()[1] not in ['VA', '/-']]
         if set(elements_xtdb).issubset(set(list(map(str.upper, elements)))):
             xTDB['elements'] += xtdb['elements']
@@ -150,11 +157,12 @@ def many2one(elements:list,xtdb_collection:list):
             xTDB['symbols'] += xtdb['symbols']
             xTDB['references'] += xtdb['references']
         
-    # Merge entries with the same phase
+    # Merge entries with the same phase model
     for key, value in xTDB.items():
         xTDB[key] = list(set(xTDB[key]))
         if key == 'phases':
-            phase_specie = [[re.search('PHASE (.*? !)', entry).group(1) + entry.split('!')[2], list(filter(None,entry.split('!')[1].split()[2].split(':')))] for entry in value]
+            phase_specie = [[re.search('PHASE (.*?!)', entry).group(1) + entry.split('!')[2], 
+                             list(filter(None,entry.split('!')[1].split()[2].split(':')))] for entry in value]
             grouped_data = {}
             for phase, species in phase_specie:
                 if phase not in grouped_data:
@@ -169,6 +177,7 @@ def many2one(elements:list,xtdb_collection:list):
 
     return xTDB
 
+# Outputs a TDB file from a JSON-TDB file
 def one2tdb(data:list):
     from_string = f'''\
     {"" if any('ELECTRON_GAS' in element for element in data['elements']) else "ELEMENT /- ELECTRON_GAS 0.0000E+00 0.0000E+00 0.0000E+00!\n"}\
@@ -187,6 +196,6 @@ def one2tdb(data:list):
 
     {'\n'.join(data['parameters'])}
 
-    {'\n'.join(data['references'])}
-    '''
+    
+    ''' #Add {'\n'.join(data['references'])} accordingly to tdb2one
     return from_string

@@ -1,0 +1,3 @@
+print('Importing from top MHDB namespace...')
+from mhdb.core.database import *
+from mhdb.core.mongo import *
