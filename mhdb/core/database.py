@@ -1,14 +1,12 @@
 from pycalphad.io.database import Database
 from pprint import pprint
-import re, json, os
+import re, json, os, datetime
 
-# Creates a JSON file from a TDB file
 def tdb2one(file_path:str):
     fd = open(file_path if '.tdb' in file_path.lower() else file_path + '.tdb', 'r')
 
-    lines = fd.read().upper()
-    lines = lines.replace('\t', ' ')
-    lines = lines.strip()
+    content = fd.read()
+    lines = content.upper().replace('\t', ' ').strip()
     # Split the string by newlines
     splitlines = lines.split('\n')
     # Remove extra whitespace inside line
@@ -29,8 +27,7 @@ def tdb2one(file_path:str):
         'FUNCTION': [],
         'TYPE_DEFINITION': [],
         'PHASE': [],
-        'PARAMETER': [],
-        'REFERENCE': []
+        'PARAMETER': []
     }
 
     # Loop over each command
@@ -53,8 +50,7 @@ def tdb2one(file_path:str):
         'phases': categories['PHASE'],
         'phase_descriptions': categories['TYPE_DEFINITION'],
         'parameters': categories['PARAMETER'],
-        'symbols': categories['FUNCTION'],
-        'references': categories['REFERENCE']
+        'symbols': categories['FUNCTION']
     }
 
     # phase_names = [re.search(r'PHASE (\w+)', phase).group(1) for phase in data['phases']]
@@ -78,9 +74,35 @@ def tdb2one(file_path:str):
 
     del data['phase_descriptions']
 
+    def get_username():
+        try:
+            return os.getlogin()
+        except:
+            return os.getenv('GITHUB_USER')
+    
+    # Define the patterns and default values
+    patterns = [r'\$\$ DATABASE_TITLE:(.*?)\n', r'\$\$ DATABASE_AUTHOR:(.*?)\n', r'\$\$ DATABASE_YEAR:(.*?)\n', r'\$\$ DATABASE_DOI:(.*?)\n']
+    default_values = [os.path.basename(fd.name), get_username(), datetime.datetime.now().year, '']
+
+    # Initialize the contents
+    contents = ['', '', '', '']
+
+    # Loop over each pattern and default value
+    for i, (pattern, default_value) in enumerate(zip(patterns, default_values)):
+        # Try to extract the content
+        try:
+            match = re.search(pattern, content)
+            contents[i] = match.group(1).strip() if match and match.group(1).strip() != '' else default_value
+        except:
+            contents[i] = default_value
+
+    # Assign the contents to title_content, doi_content, author_content, and year_content
+    title_content, doi_content = f'{contents[0]} ({contents[1]}{contents[2]})', contents[3]
+
+    data['references'] = [f'{title_content}: {doi_content}' if doi_content != '' else title_content]
+
     return data
 
-# Creates a JSON file with a collection of unitary tdbs from a TDB file
 def one2many(data:list):
     data_collection = []
     cache = []
@@ -107,7 +129,7 @@ def one2many(data:list):
 
         # Get species > Get elements
         phase_elements = []
-        for phase_specie in phase_species.split(',')[1].split(':'):
+        for phase_specie in phase_species.split(',', 1)[1].replace(':', ',').split(','):
             for specie in data['species']:
                 if phase_specie == specie.split()[1]:
                     data_collection[i]['species'].append(specie)
@@ -135,31 +157,30 @@ def one2many(data:list):
                     if phase_secondary_symbol == secondary_symbol.split()[1]:
                         data_collection[i]['symbols'].append(secondary_symbol)
             j += 1
-
+        
         # Get references
-        data_collection[i]['references'].append(data['references']) #Improve accordingly to tdb2one
+        data_collection[i]['references'] = data['references']
 
     return data_collection
 
-# Compile system-TDB files from a collection of unitary TDB files
 def many2one(elements:list,data_collection:list):
 
-    xTDB = {key: [] for key in data_collection[0].keys()}
+    TDB = {key: [] for key in data_collection[0].keys()}
 
     # Collect entries according to the elements
-    for xtdb in data_collection:
-        elements_xtdb = [line.split()[1] for line in xtdb['elements'] if line.split()[1] not in ['VA', '/-']]
-        if set(elements_xtdb).issubset(set(list(map(str.upper, elements)))):
-            xTDB['elements'] += xtdb['elements']
-            xTDB['species'] += xtdb['species']
-            xTDB['phases'] += xtdb['phases']
-            xTDB['parameters'] += xtdb['parameters']
-            xTDB['symbols'] += xtdb['symbols']
-            xTDB['references'] += xtdb['references']
+    for tdb in data_collection:
+        elements_tdb = [line.split()[1] for line in tdb['elements'] if line.split()[1] not in ['VA', '/-']]
+        if set(elements_tdb).issubset(set(list(map(str.upper, elements)))):
+            TDB['elements'] += tdb['elements']
+            TDB['species'] += tdb['species']
+            TDB['phases'] += tdb['phases']
+            TDB['parameters'] += tdb['parameters']
+            TDB['symbols'] += tdb['symbols']
+            TDB['references'] += tdb['references']
         
     # Merge entries with the same phase model
-    for key, value in xTDB.items():
-        xTDB[key] = list(set(xTDB[key]))
+    for key, value in TDB.items():
+        TDB[key] = list(set(TDB[key]))
         if key == 'phases':
             phase_specie = [[re.search('PHASE (.*?!)', entry).group(1) + entry.split('!')[2], 
                              list(filter(None,entry.split('!')[1].split()[2].split(':')))] for entry in value]
@@ -173,11 +194,10 @@ def many2one(elements:list,data_collection:list):
                 grouped_data[phase] = [[species[sublattice][specie] for sublattice in range(len(species))] for specie in range(len(species[0]))]
                 grouped_data[phase] = ':'.join([','.join(set(group)) for group in grouped_data[phase]])
             
-            xTDB[key] = [f'PHASE {phase.split('!')[0]}! CONSTITUENT {phase.split()[0].split(':')[0]} :{grouped_data[phase]}: !{phase.split('!')[1] + '!' if phase.split('!')[1] else ''}' for phase in grouped_data.keys()]
+            TDB[key] = [f'PHASE {phase.split('!')[0]}! CONSTITUENT {phase.split()[0].split(':')[0]} :{grouped_data[phase]}: !{phase.split('!')[1] + '!' if phase.split('!')[1] else ''}' for phase in grouped_data.keys()]
 
-    return xTDB
+    return TDB
 
-# Outputs a TDB file from a JSON-TDB file
 def one2tdb(data:list):
     from_string = f'''\
     {"" if any('ELECTRON_GAS' in element for element in data['elements']) else "ELEMENT /- ELECTRON_GAS 0.0000E+00 0.0000E+00 0.0000E+00!\n"}\
@@ -195,7 +215,6 @@ def one2tdb(data:list):
     {'\n'.join(data['phases']).replace("! CONSTITUENT", "!\n CONSTITUENT").replace("! TYPE_DEFINITION", "!\n TYPE_DEFINITION")}
 
     {'\n'.join(data['parameters'])}
-
     
-    ''' #Add {'\n'.join(data['references'])} accordingly to tdb2one
+    '''
     return from_string
