@@ -2,12 +2,10 @@
 name: MHDB Contribute
 about: Choose this template to submit your .tdb files
 title: "[MHDB Contribute]"
-labels: ''
+labels: 'newTDB'
 assignees: ''
 
 ---
-
-what about the grammar of this version:
 
 Hello! Welcome to MHDB Contribute.
 
