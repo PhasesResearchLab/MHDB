@@ -1,19 +1,14 @@
-import dns.resolver
-dns.resolver.default_resolver=dns.resolver.Resolver(configure=False)
-dns.resolver.default_resolver.nameservers=['8.8.8.8']
+import datetime, re
 
-from pymongo import MongoClient
-
-client_string='mongodb+srv://rdamaral:GBmJrZ8XIsCCcWWQ@plr-cluster.ls9prsp.mongodb.net/'
-client = MongoClient(client_string)
-
-db = client['MHDB'] 
-collection = db['curated']
-
-import datetime
-
-def updateEntry(entry:dict, collection):
-    collection = db[collection]
+def updateEntry(entry:dict, client_string:str, db:str, col:str):
+    import dns.resolver
+    dns.resolver.default_resolver=dns.resolver.Resolver(configure=False)
+    dns.resolver.default_resolver.nameservers=['8.8.8.8']
+    
+    from pymongo import MongoClient
+    client = MongoClient(client_string)
+    database = client[db] 
+    collection = database[col]
     
     if collection.find_one({'material.phaseModel': entry['material']['phaseModel'], 'material.phaseLabel': entry['material']['phaseLabel'], 'material.endmembers': entry['material']['endmembers']}) is None:
         entry['metadata']['created'] = datetime.datetime.now()
@@ -27,15 +22,16 @@ def updateEntry(entry:dict, collection):
         collection.update_one(match_query, update_query)
         return entry
 
+
 from pymatgen.core import Composition
 
-def TDBEntryGenerator(data:dict, collection:str='curated'):
+def TDBEntryGenerator(data:dict, client_string:str, db:str, col:str):
     
     metadata = {
         'name': 'TDBGenerated',
         'comment': f'Automated generated based on the {data["references"]} database.',
         'affiliation': 'MHDB',
-        'parentDatabase': data["references"],
+        'parentDatabase': data["references"][0],
         'parentDatabaseID': data["phases"][0].split()[1]
     }
     
@@ -59,5 +55,13 @@ def TDBEntryGenerator(data:dict, collection:str='curated'):
     entry = {"metadata": metadata, "material": material, "tdb": data}
     
     # Check if an entry already exists and update collection:
-    return updateEntry(entry, collection)
+    return updateEntry(entry, client_string, db, col)
 
+
+client_string='mongodb+srv://rdamaral:GBmJrZ8XIsCCcWWQ@plr-cluster.ls9prsp.mongodb.net/'
+
+with open('output2.json', 'r') as file:
+    data_collection = json.load(file)
+
+for data in data_collection:
+    TDBEntryGenerator(data=data, client_string=client_string, db='MHDB', col='curated')
