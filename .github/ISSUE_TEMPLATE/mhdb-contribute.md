@@ -18,8 +18,8 @@ $ Author(s): `Replace with the author(s) of the tdb.`
 $ Year (or Version): `Replace with the year or version of the tdb.`
 $ DOI (or URL reference): `Replace with the DOI of the tdb or of a publication that describes it. If left blank, no reference is added to the database.`
 
-After completing the previous steps, click on the green ‘Submit new issue’ button below. As soon as you do it, your tdb files will be processed and added to the MHDB-community.
+After completing the previous steps, click on the green ‘Submit new issue’ button below. As soon as you do it, your tdb files will be processed and added to the MHDB-community database.
 
-After that, hang tight, the confirmation about your contributions will be posted on this channel. Once this is completed, your data along with the reference to your work will have been successfully added to our database and will be available for you and other fellow researchers using MHDB.
+Hang tight, the confirmation about your contributions will be posted on this channel. Once this is completed, your data along with the reference to your work will have been successfully added to our database and will be available for you and other fellow researchers using MHDB.
 
 We thank you for your contribution and hope this tool may be of great significance for your work!
