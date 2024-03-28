@@ -81,25 +81,37 @@ def tdb2one(file_path:str):
             return os.getenv('GITHUB_USER')
     
     # Define the patterns and default values
-    patterns = [r'\$\$ DATABASE_TITLE:(.*?)\n', r'\$\$ DATABASE_AUTHOR:(.*?)\n', r'\$\$ DATABASE_YEAR:(.*?)\n', r'\$\$ DATABASE_DOI:(.*?)\n']
+    patterns = [r'\$ DATABASE_TITLE:(.*?)\n', r'\$ DATABASE_AUTHOR:(.*?)\n', r'\$ DATABASE_YEAR:(.*?)\n', r'\$ DATABASE_DOI:(.*?)\n']
     default_values = [os.path.basename(fd.name), get_username(), datetime.datetime.now().year, '']
 
-    # Initialize the contents
-    contents = ['', '', '', '']
+    # Initialize the reference_content
+    reference_content = ['', '', '', '']
 
     # Loop over each pattern and default value
     for i, (pattern, default_value) in enumerate(zip(patterns, default_values)):
         # Try to extract the content
         try:
             match = re.search(pattern, content)
-            contents[i] = match.group(1).strip() if match and match.group(1).strip() != '' else default_value
+            if match.group(1).strip() != '':
+                reference_content[i] = match.group(1).strip()
+            else:
+                raise Exception("Match group is empty")
+            
         except:
-            contents[i] = default_value
+            try:
+                match = re.search(pattern, os.getenv('ISSUE_BODY'))
+                if match.group(1).strip() != '':
+                    reference_content[i] = match.group(1).strip()
+                else:
+                    raise Exception("Match group is empty")
+                
+            except:
+                reference_content[i] = default_value
 
-    # Assign the contents to title_content, doi_content, author_content, and year_content
-    title_content, doi_content = f'{contents[0]} ({contents[1]}{contents[2]})', contents[3]
+    # Assign the reference_content to title_content, doi_content, author_content, and year_content
+    title_content, doi_content = f'{reference_content[0]} | {reference_content[1]} | {reference_content[2]}', reference_content[3]
 
-    data['references'] = [f'{title_content}: {doi_content}' if doi_content != '' else title_content]
+    data['references'] = [f'{title_content} | {doi_content}' if doi_content != '' else title_content]
 
     return data
 

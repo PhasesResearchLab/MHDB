@@ -3,7 +3,7 @@
     "customizations": {
       "codespaces": {
         "openFiles": [
-          "README.md"
+          "TdH2.ipynb"
         ]
       },
       "vscode": {
@@ -15,7 +15,7 @@
           "hansvn.instant-mongo"
         ],
         "env": {
-          "MONGODB_URI": "mongodb+srv://rdamaral:GBmJrZ8XIsCCcWWQ@plr-cluster.ls9prsp.mongodb.net/"
+          "MONGODB_URI": "mongodb+srv://mhdb_read:aOkJ4CU4XDlcqcKQ@plr-cluster.ls9prsp.mongodb.net/"
         }
       }
     },

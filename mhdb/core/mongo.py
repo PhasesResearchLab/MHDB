@@ -13,14 +13,14 @@ def updateEntry(entry:dict, client_string:str, db:str, col:str):
     if collection.find_one({'material.phaseModel': entry['material']['phaseModel'], 'material.phaseLabel': entry['material']['phaseLabel'], 'material.endmembers': entry['material']['endmembers']}) is None:
         entry['metadata']['created'] = datetime.datetime.now()
         collection.insert_one(entry)
-        return entry
     
     else:
         entry['metadata']['lastModified'] = datetime.datetime.now()
         match_query = {'material.phaseModel': entry['material']['phaseModel'], 'material.phaseLabel': entry['material']['phaseLabel'], 'material.endmembers': entry['material']['endmembers']}
         update_query = {'$set': {**{k: entry[k] for k in entry if k != 'metadata'}, 'metadata.lastModified': entry['metadata']['lastModified']}}
         collection.update_one(match_query, update_query)
-        return entry
+    
+    return entry
 
 
 from pymatgen.core import Composition
@@ -56,12 +56,3 @@ def TDBEntryGenerator(data:dict, client_string:str, db:str, col:str):
     
     # Check if an entry already exists and update collection:
     return updateEntry(entry, client_string, db, col)
-
-
-client_string='mongodb+srv://rdamaral:GBmJrZ8XIsCCcWWQ@plr-cluster.ls9prsp.mongodb.net/'
-
-with open('output2.json', 'r') as file:
-    data_collection = json.load(file)
-
-for data in data_collection:
-    TDBEntryGenerator(data=data, client_string=client_string, db='MHDB', col='curated')

@@ -2,7 +2,7 @@ name: tdb2mhdb
 
 on:
     issues:
-      types: [opened]
+      types: [opened, edited]
 
 jobs:
   respond:
@@ -11,7 +11,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Verify whether issue is labeled with 'newTDB'
-        uses: actions/github-script@v5
+        uses: actions/github-script@v7
         with:
           script: |
             const issueNumber = context.issue.number;
@@ -47,11 +47,22 @@ jobs:
         
             console.log('Matches:', matches);
         
+            let message;
             if (matches && matches.length > 0) {
-                fs.writeFileSync('match.txt', matches[0]);
+              message = '👍 I found the ZIP file linked in your comment. I will now attempt to download it and validate contents!';
+              fs.writeFileSync('match.txt', matches[0]);
             } else {
-                fs.writeFileSync('match.txt', 'false');
+              message = '😢 Your comment does not contain any direct links to ZIP files.\n\n';
+              message += `You may edit your original request, include your ZIP file, and update your comment to try again.`;
+              fs.writeFileSync('match.txt', 'false');
             }
+
+            github.rest.issues.createComment({
+              owner: issue.owner,
+              repo: issue.repo,
+              issue_number: issue.number,
+              body: message
+            });
 
       - name: Download file
         id: download
@@ -59,7 +70,8 @@ jobs:
             file=$(cat match.txt)
             file=$(echo $file | sed 's/\.zipLICENSE/\.zip/g')
             echo $file | tee log.txt
-            wget -O task.zip $file || echo "::set-output name=failed::true"
+            sleep 5
+            wget -O task.zip -L $file || echo "failed=true" >> $GITHUB_ENV
 
       - name: Send message if download failed
         uses: actions/github-script@v7
@@ -67,8 +79,9 @@ jobs:
         with:
           script: |
             const issue = context.issue;
-            const message = '😢 I could not download the task ZIP file. Exiting now...';
-    
+            let message = `😢 I could not download your ZIP file. Please double check if you have attached it to your message. When attached, GitHub would show a link similar to this: [FileName.zip](https://github.com/PhasesResearchLab/MHDB/files/.../FileName.zip)\n\n`;
+            message += `You may edit your original request, include your ZIP file, and update your comment to try again.`;
+
             github.rest.issues.createComment({
                 owner: issue.owner,
                 repo: issue.repo,
@@ -112,8 +125,9 @@ jobs:
         with:
           script: |
             const issue = context.issue;
-            const message = '😢 The files supplied in ZIP do not have one of the required extensions: `TDB`, `DAT` or `XML`. If you need another format to work, let us know!';
-    
+            let message = `😢 The files supplied in ZIP do not have one of the required extensions: `TDB`. If you need another format to work, such as `DAT` or `XML`, let us know!\n\n`;
+            message += `You may edit your original request, modify your TDB files, and update your comment to try again.`;
+
             github.rest.issues.createComment({
                 owner: issue.owner,
                 repo: issue.repo,
@@ -121,11 +135,11 @@ jobs:
                 body: message
             });
 
-      - name: Set up Python 3.11
+      - name: Set up Python 3.12
         uses: actions/setup-python@v5
         if: env.valid == 'true'
         with:
-            python-version: "3.11"
+            python-version: "3.12"
             cache: 'pip'
             cache-dependency-path: 'requirements.txt'
             
@@ -135,20 +149,42 @@ jobs:
             python -m pip install -r requirements.txt | tee -a log.txt
             git clone https://github.com/PhasesResearchLab/MHDB.git
 
+      - name: Extract issue details
+        uses: actions/github-script@v7
+        id: extract
+        with:
+          script: |
+            const fs = require('fs');
+            const issue = context.issue;
+      
+            const issueDetails = await github.rest.issues.get({
+              owner: issue.owner,
+              repo: issue.repo,
+              issue_number: issue.number,
+            });
+      
+            const body = issueDetails.data.body;
+      
+            fs.writeFileSync('issues.txt', body);
+      
+            return body;
+      
       - name: Run MHDB parsing scripts
         if: env.valid == 'true'
+        env:
+            GITHUB_USER: ${{ github.event.issue.user.login }}
         run: |
-            for /R tdbs %%G in (*.tdb *.TDB) do (
-                python -c "from mhdb.core import database, mongo; data = database.tdb2one('%%G'); data_collection = database.one2many(data); [mongo.TDBEntryGenerator(data=d, client_string='${{ secrets.CLIENT_STRING }}', db='MHDB', collection='community') for d in data_collection]"
-            )
+            export CLIENT_STRING=${{ secrets.CLIENT_STRING }}
+            export ISSUE_BODY=$(cat issues.txt)
+            find tdbs -type f \( -iname \*.tdb -o -iname \*.TDB \) -exec sh -c "python -c \"import os; from mhdb.core import database, mongo; data = database.tdb2one('{}'); data_collection = database.one2many(data); print(f'> {len(data_collection)} entries uploaded from {data['references'][0].split(' | ')[0]}'); [mongo.TDBEntryGenerator(data=d, client_string=os.environ['CLIENT_STRING'], db='MHDB', col='community') for d in data_collection]\" >> MHDB.log" \;
     
       - name: Run another step if Python step fails
-        if: failure()
+        if: failure() && env.valid == 'true'
         uses: actions/github-script@v7
         with:
           script: |
             const issue = context.issue;
-            const message = '😢 Something went wrong processing your TDB files...\nYou can see logs under Actions tab.';
+            const message = '😢 Something went wrong while processing your TDB files...\nYou can see logs under Actions tab.';
     
             github.rest.issues.createComment({
                 owner: issue.owner,
@@ -162,9 +198,13 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
+            const fs = require('fs');
             const issue = context.issue;
             
-            let message = `🚀 All Done!\nEnjoy!`
+            let message = `🚀 All Done! Your submission is now completed and all entries found in your TDB file(s) were added to MHDB-community.\n\n`;
+            message += `Here's a summary of all files and entries processed:\n`;
+            
+            message += fs.readFileSync('MHDB.log', 'utf8');
         
             github.rest.issues.createComment({
                 owner: issue.owner,
