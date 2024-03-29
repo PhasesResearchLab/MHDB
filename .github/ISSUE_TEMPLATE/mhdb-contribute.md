@@ -24,4 +24,4 @@ After completing the previous steps, click on the green `Submit new issue` butto
 
 We thank you for your contribution and hope this tool may be of great significance for your work!
 
-*PS: GitHub attaches files as links, which can be created using the 'clip' symbol above or by 'drag-and-drop' your file to this message. Please replace this example with your ZIP file link: [Example](URL)
+*PS: GitHub attaches files as links, which can be created using the 'clip' button above or by 'drag-and-drop' your file to this message. Please replace this example with your ZIP file link: [Example](URL)
