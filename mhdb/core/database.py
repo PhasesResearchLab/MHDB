@@ -158,7 +158,7 @@ def one2many(data:list):
             for phase_symbol in re.findall(r'\b\w{3,}_?\w*\b', phase_parameter):  
                 for symbol in data['symbols']:
                     if phase_symbol == symbol.split()[1]:
-                        data_collection[i]['symbols'].append(symbol)
+                        data_collection[i]['symbols'].append(symbol) if symbol not in data_collection[i]['symbols'] else None
 
         # Get symbols called in functions (recursively)
         j = 0
@@ -167,7 +167,7 @@ def one2many(data:list):
             for phase_secondary_symbol in re.findall(r'[-+ ](\w+)(?=#)', phase_symbol):
                 for secondary_symbol in data['symbols']:
                     if phase_secondary_symbol == secondary_symbol.split()[1]:
-                        data_collection[i]['symbols'].append(secondary_symbol)
+                        data_collection[i]['symbols'].append(secondary_symbol) if secondary_symbol not in data_collection[i]['symbols'] else None
             j += 1
         
         # Get references
