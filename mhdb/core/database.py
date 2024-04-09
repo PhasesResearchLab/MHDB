@@ -137,7 +137,7 @@ def one2many(data:list):
         # Get phase > Update constituents
         for phase in data['phases']:
             if phase_species.split(',')[0] == phase.split()[1].split(':')[0]:
-                data_collection[i]['phases'].append(f"{phase.split('!')[0]}! CONSTITUENT {phase_species.split(',')[0]} :{phase_species.split(',', 1)[1]}: !{phase.split('!')[2] + '!' if phase.split('!')[2] else ''}")
+                data_collection[i]['phases'].append(f"{phase.split('!')[0]}! CONSTITUENT {phase_species.split(',')[0]} :{phase_species.split(',', 1)[1]}: !{phase.split('!', 2)[2] if phase.split('!')[2] else ''}")
 
         # Get species > Get elements
         phase_elements = []
@@ -194,7 +194,7 @@ def many2one(elements:list,data_collection:list):
     for key, value in TDB.items():
         TDB[key] = list(set(TDB[key]))
         if key == 'phases':
-            phase_specie = [[re.search('PHASE (.*?!)', entry).group(1) + entry.split('!')[2], 
+            phase_specie = [[re.search('PHASE (.*?!)', entry).group(1) + entry.split('!', 2)[2], 
                              list(filter(None,entry.split('!')[1].split()[2].split(':')))] for entry in value]
             grouped_data = {}
             for phase, species in phase_specie:
@@ -206,7 +206,7 @@ def many2one(elements:list,data_collection:list):
                 grouped_data[phase] = [[species[sublattice][specie] for sublattice in range(len(species))] for specie in range(len(species[0]))]
                 grouped_data[phase] = ':'.join([','.join(set(group)) for group in grouped_data[phase]])
             
-            TDB[key] = [f'PHASE {phase.split('!')[0]}! CONSTITUENT {phase.split()[0].split(':')[0]} :{grouped_data[phase]}: !{phase.split('!')[1] + '!' if phase.split('!')[1] else ''}' for phase in grouped_data.keys()]
+            TDB[key] = [f'PHASE {phase.split('!')[0]}! CONSTITUENT {phase.split()[0].split(':')[0]} :{grouped_data[phase]}: !{phase.split('!', 1)[1] if phase.split('!')[1] else ''}' for phase in grouped_data.keys()]
 
     return TDB
 
