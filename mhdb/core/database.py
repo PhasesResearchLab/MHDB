@@ -212,21 +212,20 @@ def many2one(elements:list,data_collection:list):
 
 def one2tdb(data:list):
     from_string = f'''\
-    {"" if any('ELECTRON_GAS' in element for element in data['elements']) else "ELEMENT /- ELECTRON_GAS 0.0000E+00 0.0000E+00 0.0000E+00!\n"}\
-    {"" if any('VACUUM' in element for element in data['elements']) else "ELEMENT VA VACUUM 0.0000E+00 0.0000E+00 0.0000E+00!\n"}\
-    {'\n'.join(data['elements'])}
+{"" if any('ELECTRON_GAS' in element for element in data['elements']) else "ELEMENT /- ELECTRON_GAS 0.0000E+00 0.0000E+00 0.0000E+00!\n"}\
+{"" if any('VACUUM' in element for element in data['elements']) else "ELEMENT VA VACUUM 0.0000E+00 0.0000E+00 0.0000E+00!\n"}\
+{'\n'.join(data['elements'])}
 
-    {'\n'.join(data['species'])}
+{'\n'.join(data['species'])}
 
-    {'\n'.join(data['symbols'])}
+{'\n'.join(data['symbols'])}
 
-    TYPE_DEFINITION % SEQ *!
-    DEFINE_SYSTEM_DEFAULT ELEMENT 2 !
-    DEFAULT_COMMAND DEF_SYS_ELEMENT VA /- !
+TYPE_DEFINITION % SEQ *!
+DEFINE_SYSTEM_DEFAULT ELEMENT 2 !
+DEFAULT_COMMAND DEF_SYS_ELEMENT VA /- !
 
-    {'\n'.join(data['phases']).replace("! CONSTITUENT", "!\n CONSTITUENT").replace("! TYPE_DEFINITION", "!\n TYPE_DEFINITION")}
+{'\n'.join(data['phases']).replace("! CONSTITUENT", "!\n CONSTITUENT").replace("! TYPE_DEFINITION", "!\n TYPE_DEFINITION")}
 
-    {'\n'.join(data['parameters'])}
-    
+{'\n'.join(data['parameters'])}
     '''
     return from_string
