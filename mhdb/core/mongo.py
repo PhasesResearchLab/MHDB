@@ -36,7 +36,7 @@ def TDBEntryGenerator(data:dict, client_string:str, db:str, col:str):
         'affiliation': 'MHDB',
         'parentDatabase': data["references"][0],
         'parentDatabaseID': parentDatabaseID,
-        'parentDatabaseURL': None if "github" not in client_string else "hash"
+        'parentDatabaseURL': "None" if "github" not in client_string else "hash"
     }
     
     elements = [element.split()[1] for element in data["elements"]]
