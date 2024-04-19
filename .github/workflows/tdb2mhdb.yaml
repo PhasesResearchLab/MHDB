@@ -192,6 +192,37 @@ jobs:
                 issue_number: issue.number,
                 body: message
             });
+
+      - name: TAR GZ all files with 7zip
+        if: env.valid == 'true'
+        run: |
+          echo "Packaging into .tar.gz file now..."
+          issue_number=${{ github.event.issue.number }}
+          date_string=$(date "+%d%b%y_%H%M")
+          echo $date_string
+          issue_number="${issue_number}_${date_string}"
+          echo "${issue_number}"
+          tar -c tdbs/*  | 7z a -si -tgzip -mx=9 "contributions/contrib_${issue_number}.tar.gz"
+
+      - name: Commit changes with Add & Commit
+        id: commit
+        uses: EndBug/add-and-commit@v9
+        with:
+          message: '(automatic) Contribution Persisted'
+          add: "contributions/*.tar.gz"
+
+      - name: Get commit hash
+        id: gethash
+        run: echo "::set-output name=hash::$(git rev-parse HEAD)"
+
+      - name: Update MHDB hash
+        if: env.valid == 'true'
+        env:
+            GITHUB_USER: ${{ github.event.issue.user.login }}
+            COMMIT_HASH: ${{ steps.gethash.outputs.hash }}
+        run: |
+            export CLIENT_STRING=${{ secrets.CLIENT_STRING }}
+            python -c "from pymongo import MongoClient; client = MongoClient(os.environ['CLIENT_STRING']); db = client['MHDB']; collection = db['community']; collection.update_many({'metadata.parentDatabaseURL': 'hash'}, {'$set': {'metadata.parentDatabaseURL': os.environ['COMMIT_HASH']}})"
     
       - name: Report results
         if: env.valid == 'true'
@@ -200,9 +231,12 @@ jobs:
           script: |
             const fs = require('fs');
             const issue = context.issue;
+            const full_commit_hash = "${{ steps.gethash.outputs.hash }}";
+            const commit_hash = full_commit_hash.substring(0, 8);
             
-            let message = `🚀 All Done! Your submission is now completed and all entries found in your TDB file(s) were added to MHDB-community.\n\n`;
-            message += `Here's a summary of all files and entries processed:\n`;
+            let message = '🚀 All Done! Your contribution hash is [${commit_hash}](https://mhdb.mat-x.org//${commit_hash}).\n\n';
+            message += 'Your submission is now completed and all entries found in your TDB file(s) were added to MHDB-community. Please refer to `NewData.ipynb` for further instructions on how to access the database.\n';
+            message += 'Here's a summary of all files and entries processed:\n';
             
             message += fs.readFileSync('MHDB.log', 'utf8');
         
