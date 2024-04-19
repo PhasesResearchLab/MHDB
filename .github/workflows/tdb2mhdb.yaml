@@ -222,7 +222,7 @@ jobs:
             COMMIT_HASH: ${{ steps.gethash.outputs.hash }}
         run: |
             export CLIENT_STRING=${{ secrets.CLIENT_STRING }}
-            python -c "import os; from pymongo import MongoClient; client = MongoClient(os.environ['CLIENT_STRING']); db = client['MHDB']; collection = db['community']; collection.update_many({'metadata.parentDatabaseURL': 'hash'}, {'$$set': {'metadata.parentDatabaseURL': str(os.environ['COMMIT_HASH'])}})"
+            python -c "import os; from pymongo import MongoClient; client = MongoClient(os.environ['CLIENT_STRING']); db = client['MHDB']; collection = db['community']; collection.update_many({'metadata.parentDatabaseURL': 'hash'}, {'\$set': {'metadata.parentDatabaseURL': str(os.environ['COMMIT_HASH'])}})"
     
       - name: Report results
         if: env.valid == 'true'
