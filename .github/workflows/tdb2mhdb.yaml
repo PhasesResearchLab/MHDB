@@ -222,7 +222,7 @@ jobs:
             COMMIT_HASH: ${{ steps.gethash.outputs.hash }}
         run: |
             export CLIENT_STRING=${{ secrets.CLIENT_STRING }}
-            python -c "import os; from pymongo import MongoClient; client = MongoClient(os.environ['CLIENT_STRING']); db = client['MHDB']; collection = db['community']; collection.update_many({'metadata.parentDatabaseURL': 'hash'}, {'\$set': {'metadata.parentDatabaseURL': str(os.environ['COMMIT_HASH'])}})"
+            python -c "import os; from pymongo import MongoClient; client = MongoClient(os.environ['CLIENT_STRING']); db = client['MHDB']; collection = db['community']; collection.update_many({'metadata.parentDatabaseURL': 'hash'}, {'\$set': {'metadata.parentDatabaseURL': os.environ['COMMIT_HASH'].substring(0, 8)}})"
     
       - name: Report results
         if: env.valid == 'true'
@@ -234,12 +234,12 @@ jobs:
             const full_commit_hash = "${{ steps.gethash.outputs.hash }}";
             const commit_hash = full_commit_hash.substring(0, 8);
             
-            let message = '🚀 All Done! Your contribution hash is [${commit_hash}](https://mhdb.mat-x.org//${commit_hash}).\n\n';
-            message += 'Your submission is now completed and all entries found in your TDB file(s) were added to MHDB-community. Please refer to `NewData.ipynb` for further instructions on how to access the database.\n';
-            message += 'Here's a summary of all files and entries processed:\n';
+            let message = `🚀 All Done! Your contribution hash is [${commit_hash}](https://mhdb.mat-x.org//${commit_hash}).\n\n`;
+            message += `Your submission is now completed and all entries found in your TDB file(s) were added to MHDB-community. Please refer to \`NewData.ipynb\` for further instructions on how to access the database.\n`;
+            message += `Here\'s a summary of all files and entries processed:\n`;
             
             message += fs.readFileSync('MHDB.log', 'utf8');
-        
+            
             github.rest.issues.createComment({
                 owner: issue.owner,
                 repo: issue.repo,
