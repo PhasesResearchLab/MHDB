@@ -52,8 +52,7 @@ def TDBEntryGenerator(data:dict, client_string:str, db:str, col:str):
         'system': '-'.join(elements),
         'endmembers': '-'.join([formula]), #Still need to separate endmembers in case of solid solutions
         'phaseLabel': parentDatabaseID.split('_')[-1].split(':')[-1],
-        'phaseModel': phaseModel,
-        'SER': round(SER.GM.values[0][0][0][0], 4)
+        'phaseModel': phaseModel
     }
 
     dbf = Database(parseTDB.one2tdb(data))
