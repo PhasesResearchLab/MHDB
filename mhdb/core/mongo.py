@@ -14,7 +14,7 @@ def updateEntry(entry:dict, client_string:str, db:str, col:str):
     database = client[db] 
     collection = database[col]
     
-    if collection.find_one({'metadata.parentDatabaseURL': entry['metadata']['parentDatabaseURL'], 'material.phaseModel': entry['material']['phaseModel']}) is None:
+    if collection.find_one({'metadata.parentDatabaseURL': entry['metadata']['parentDatabaseURL'], 'material.phaseLabel': entry['material']['phaseLabel'], 'material.phaseModel': entry['material']['phaseModel']}) is None:
         entry['metadata']['created'] = datetime.datetime.now()
         collection.insert_one(entry)
     
