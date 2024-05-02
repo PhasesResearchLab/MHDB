@@ -235,7 +235,7 @@ jobs:
             const commit_hash = full_commit_hash.substring(0, 8);
             
             let message = `🚀 All Done! The confirmation hash of your contribution is: [${commit_hash}](https://mhdb.mat-x.org/${commit_hash}).\n\n`;
-            message += `Your submission is now completed and all entries found in your TDB file(s) were added to MHDB-community. Please refer to \`NewData.ipynb\` for further instructions on how to access the database.\n`;
+            message += `Your submission is now completed and all entries found in your TDB file(s) were added to MHDB-community. Please refer to [\`NewData.ipynb\`](https://github.com/PhasesResearchLab/MHDB/blob/main/notebooks/NewData.ipynb) for further instructions on how to access the database.\n`;
             message += `Here\'s a summary of all files and entries processed:\n`;
             
             message += fs.readFileSync('MHDB.log', 'utf8');

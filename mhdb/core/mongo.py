@@ -1,8 +1,14 @@
-from mhdb.core import parseTDB
+from mhdb.core import parsing
 from pycalphad import Database, calculate
 from pymatgen.core import Composition
 import datetime, re
 from pprint import pprint
+
+def queryTDB(collection, elements):
+    regex_pattern = '^(' + '|'.join(elements) + ')(-(' + '|'.join(elements) + '))*$'
+    data_collection = collection.find({'material.system': {'$regex': regex_pattern, '$options': 'i'}}, {'tdb': 1, '_id': 0})
+    data_collection = [entry['tdb'] for entry in list(data_collection)]
+    return data_collection
 
 def updateEntry(entry:dict, client_string:str, db:str, col:str):
     import dns.resolver
@@ -55,7 +61,7 @@ def TDBEntryGenerator(data:dict, client_string:str, db:str, col:str):
         'phaseModel': phaseModel
     }
 
-    dbf = Database(parseTDB.one2tdb(data))
+    dbf = Database(parsing.one2tdb(data))
 
     try:
         SER = round(calculate(dbf, elements + ['VA'], parentDatabaseID.split(':')[0], P=101325, T=298.15).GM.values[0][0][0][0], 4)
@@ -151,7 +157,7 @@ def DFTEntryGenerator(data:dict, client_string:str, db:str, col:str):
     }
 
     pprint(tdb)
-    dbf = Database(parseTDB.one2tdb(tdb))
+    dbf = Database(parsing.one2tdb(tdb))
 
     try:
         SER = round(calculate(dbf, elements + ['VA'], phase_name, P=101325, T=298.15).GM.values[0][0][0][0], 4)

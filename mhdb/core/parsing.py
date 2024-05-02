@@ -2,6 +2,11 @@ from pycalphad.io.database import Database
 from pprint import pprint
 import re, json, os, datetime
 
+def many2tdb(elements, data_collection):
+    data = many2one(elements, data_collection)
+    data = one2tdb(data)
+    return data
+
 def tdb2one(file_path:str):
     fd = open(file_path if '.tdb' in file_path.lower() else file_path + '.tdb', 'r')
 
