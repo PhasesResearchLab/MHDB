@@ -176,7 +176,7 @@ jobs:
         run: |
             export CLIENT_STRING=${{ secrets.CLIENT_STRING }}
             export ISSUE_BODY=$(cat issues.txt)
-            find tdbs -type f \( -iname \*.tdb -o -iname \*.TDB \) -exec sh -c "python -c \"import os; from mhdb.core import parseTDB, mongo; data = parseTDB.tdb2one('{}'); data_collection = parseTDB.one2many(data); print(f'> {len(data_collection)} entries uploaded from {data['references'][0].split(' | ')[0]}'); [mongo.TDBEntryGenerator(data=d, client_string=os.environ['CLIENT_STRING'], db='MHDB', col='community') for d in data_collection]\" >> MHDB.log" \;
+            find tdbs -type f \( -iname \*.tdb -o -iname \*.TDB \) -exec sh -c "python -c \"import os; from mhdb.core import parsing, mongo; data = parsing.tdb2one('{}'); data_collection = parsing.one2many(data); print(f'> {len(data_collection)} entries uploaded from {data['references'][0].split(' | ')[0]}'); [mongo.TDBEntryGenerator(data=d, client_string=os.environ['CLIENT_STRING'], db='MHDB', col='community') for d in data_collection]\" >> MHDB.log" \;
     
       - name: Run another step if Python step fails
         if: failure() && env.valid == 'true'
