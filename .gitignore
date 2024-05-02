@@ -1,5 +1,5 @@
 /local/
-/mhdb/aux/
+/mhdb/dev/
 *.pyc
 **/__pycache__
 runner*

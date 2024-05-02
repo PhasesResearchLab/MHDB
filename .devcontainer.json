@@ -3,7 +3,7 @@
     "customizations": {
       "codespaces": {
         "openFiles": [
-          "notebooks/TdH2.ipynb"
+          "notebooks/README.md"
         ]
       },
       "vscode": {
