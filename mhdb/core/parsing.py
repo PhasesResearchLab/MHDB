@@ -74,7 +74,7 @@ def tdb2one(file_path:str):
 
     for phase_description in data['phase_descriptions']:
         for j, phase in enumerate(data['phases']):
-            if phase_description.split()[4] == phase.split()[1]:
+            if phase_description.split()[4] == phase.split()[1].split(':')[0]:
                 data['phases'][j] = phase + f' {phase_description}'
 
     del data['phase_descriptions']
@@ -125,7 +125,7 @@ def one2many(data:list):
     cache = []
 
     for k, parameter in enumerate(data['parameters']):
-        phase_species = re.search(r'PARAMETER [A-Z]+\(([^;]+);', parameter).group(1).replace(' ','')
+        phase_species = re.search(r'PARAMETER [A-Z0-9]+\(([^;]+);', parameter).group(1).replace(' ','')
         if phase_species in cache:
             continue
         
@@ -136,13 +136,13 @@ def one2many(data:list):
         cache.append(phase_species)
 
         for j, secondary_parameter in enumerate(data['parameters']):
-            if k != j and phase_species == re.search(r'PARAMETER [A-Z]+\(([^;]+);', secondary_parameter).group(1):
+            if k != j and phase_species == re.search(r'PARAMETER [A-Z0-9]+\(([^;]+);', secondary_parameter).group(1):
                 data_collection[i]['parameters'].append(secondary_parameter)
         
         # Get phase > Update constituents
         for phase in data['phases']:
             if phase_species.split(',')[0] == phase.split()[1].split(':')[0]:
-                data_collection[i]['phases'].append(f"{phase.split('!')[0]}! CONSTITUENT {phase_species.split(',')[0]} :{phase_species.split(',', 1)[1]}: !{phase.split('!', 2)[2] if phase.split('!')[2] else ''}")
+                data_collection[i]['phases'].append(f"{phase.split('!')[0]}! CONSTITUENT {phase_species.split(',')[0]} :{re.split(r'[+-]', phase_species.split(',', 1)[1])[0]}: !{phase.split('!', 2)[2] if phase.split('!')[2] else ''}")
 
         # Get species > Get elements
         phase_elements = []
@@ -150,12 +150,18 @@ def one2many(data:list):
             for specie in data['species']:
                 if phase_specie == specie.split()[1]:
                     data_collection[i]['species'].append(specie)
+                    for phase_element in [part for part in re.split(r'\d+', specie.split()[2]) if part]:
+                        if phase_element not in phase_elements:
+                            phase_elements.append(element)
+                            for element in data['elements']:
+                                if phase_element == element.split()[1]:
+                                    data_collection[i]['elements'].append(element)
             
             for phase_element in [part for part in re.split(r'\d+', phase_specie) if part]:
                 if phase_element not in phase_elements:
                     phase_elements.append(phase_element)
                     for element in data['elements']:
-                        if phase_element == element.split()[1]:
+                        if re.split(r'[+-]', phase_element)[0] == element.split()[1]:
                             data_collection[i]['elements'].append(element)
 
         # Get symbols called in parameters
@@ -169,7 +175,8 @@ def one2many(data:list):
         j = 0
         while j < len(data_collection[i]['symbols']):
             phase_symbol = data_collection[i]['symbols'][j]
-            for phase_secondary_symbol in re.findall(r'[-+ ](\w+)(?=#)', phase_symbol):
+            phase_symbol = ' '.join(phase_symbol.split(' ')[3:-3])
+            for phase_secondary_symbol in re.findall(r'(?!EXP)(?=[0-9]*?[A-Z_]+)(?![0-9]+E)([A-Z0-9_]{3,})', phase_symbol):
                 for secondary_symbol in data['symbols']:
                     if phase_secondary_symbol == secondary_symbol.split()[1]:
                         data_collection[i]['symbols'].append(secondary_symbol) if secondary_symbol not in data_collection[i]['symbols'] else None
@@ -208,8 +215,8 @@ def many2one(elements:list,data_collection:list):
                 grouped_data[phase].append(species)
             
             for phase, species in grouped_data.items():
-                grouped_data[phase] = [[species[sublattice][specie] for sublattice in range(len(species))] for specie in range(len(species[0]))]
-                grouped_data[phase] = ':'.join([','.join(set(group)) for group in grouped_data[phase]])
+                grouped_data[phase] = [[species[sublattice][specie] for sublattice in range(len(species)) if species[sublattice][specie] != '*'] for specie in range(len(species[0]))]
+                grouped_data[phase] = ':'.join([','.join(set(','.join(group).split(','))) for group in grouped_data[phase]])
             
             TDB[key] = [f'PHASE {phase.split('!')[0]}! CONSTITUENT {phase.split()[0].split(':')[0]} :{grouped_data[phase]}: !{phase.split('!', 1)[1] if phase.split('!')[1] else ''}' for phase in grouped_data.keys()]
 
