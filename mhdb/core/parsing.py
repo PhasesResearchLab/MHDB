@@ -142,7 +142,7 @@ def one2many(data:list):
         # Get phase > Update constituents
         for phase in data['phases']:
             if phase_species.split(',')[0] == phase.split()[1].split(':')[0]:
-                data_collection[i]['phases'].append(f"{phase.split('!')[0]}! CONSTITUENT {phase_species.split(',')[0]} :{re.split(r'[+-]', phase_species.split(',', 1)[1])[0]}: !{phase.split('!', 2)[2] if phase.split('!')[2] else ''}")
+                data_collection[i]['phases'].append(f"{phase.split('!')[0]}! CONSTITUENT {phase_species.split(',')[0]} :{phase_species.split(',', 1)[1]}: !{phase.split('!', 2)[2] if phase.split('!')[2] else ''}")
 
         # Get species > Get elements
         phase_elements = []
